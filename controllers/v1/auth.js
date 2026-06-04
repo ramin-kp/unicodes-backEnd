@@ -1,5 +1,6 @@
 const userModel = require("../../models/user");
 const validator = require("../../validators/register");
+const loginValidator = require("../../validators/login");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -25,7 +26,7 @@ exports.register = async (req, res) => {
       });
     }
     const hashedPass = await bcrypt.hash(password, 10);
-    const userCount = await userModel.find();
+    const userCount = await userModel.find({});
     const addUser = await userModel.create({
       username,
       firesName,
@@ -33,7 +34,7 @@ exports.register = async (req, res) => {
       mobile,
       email,
       password: hashedPass,
-      role: userCount > 0 ? "USER" : "ADMIN",
+      role: userCount.length > 0 ? "USER" : "ADMIN",
     });
 
     const userObject = addUser.toObject();
@@ -47,14 +48,51 @@ exports.register = async (req, res) => {
       .status(201)
       .json({ msg: "ثبت نام شما با موفقیت انجام شد", data: userObject, token });
   } catch (error) {
-    console.log("error", error);
     return res.status(500).json({
       msg: "مشکلی سمت سرور رخ داده است",
       error,
     });
   }
 };
-exports.login = async (req, res) => {};
+exports.login = async (req, res) => {
+  try {
+    const loginValidatorResult = loginValidator(req.body);
+
+    if (loginValidatorResult !== true) {
+      return res.status(429).json({
+        msg: "فیلدهای ارسالی معتبر نمی باشد",
+        validatorMsg: loginValidatorResult,
+      });
+    }
+
+    const { identifier, password } = req.body;
+
+    const userData = await userModel.findOne({
+      $or: [{ email: identifier }, { mobile: identifier }],
+    });
+
+    if (!userData) {
+      return res.status(404).json({
+        msg: "کاربری با این ایمیل یا پسورد یافت نشد",
+      });
+    }
+
+    const verifyPass = await bcrypt.compare(password, userData?.password);
+
+    if (!verifyPass) {
+      return res.status(404).json({
+        msg: "پسورد کاربر صحیح نمی باشد",
+      });
+    }
+
+    const token = jwt.sign({ id: userData?._id }, process.env.JWT_SECRET);
+
+    return res.status(200).json({
+      msg: "یونی کدی عزیز خوش آمدی",
+      token,
+    });
+  } catch (error) {}
+};
 exports.getMe = async (req, res) => {};
 
 // {

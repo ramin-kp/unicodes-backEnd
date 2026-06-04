@@ -4,7 +4,7 @@ const bodyParser = require("body-parser");
 const path = require("path");
 
 const authRouter = require("./routes/v1/auth");
-const banUserRouter = require("./routes/v1/banUser");
+const userRouter = require("./routes/v1/user");
 
 const app = express();
 
@@ -17,6 +17,6 @@ app.use(
 );
 
 app.use("/v1/auth", authRouter);
-app.use("/v1/ban-user", banUserRouter);
+app.use("/v1/user", userRouter);
 
 module.exports = app;
