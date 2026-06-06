@@ -22,10 +22,6 @@ const schema = mongoose.Schema(
       type: String,
       required: true,
     },
-    video: {
-      type: String,
-      required: true,
-    },
     status: {
       type: String,
       required: true,
